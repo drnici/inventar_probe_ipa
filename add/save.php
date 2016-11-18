@@ -19,9 +19,13 @@ $author_id			= $sys["user"]["person_id"];
 // Mindestens ein Obejekttitel muss ausgefüllt sein(doppelte Aufführung darf nicht sein)
 if ( !empty ( $obj_id ) &&  !empty ( $inventar_nr ))
 {
-    // Objekttitel erstellen
-    $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`) VALUES (" . $person_id . "," . $obj_id . ",'" . $author_id . "','" . $inventar_nr . "')" );
+    // Inventar erstellen
 
+    if(!empty($person_id)){
+        $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`) VALUES (" . $person_id . "," . $obj_id . "," . $author_id . "," . $inventar_nr . ",1)" );
+    }else{
+        $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`) VALUES (" . $person_id . "," . $obj_id . "," . $author_id . "," . $inventar_nr . ")" );
+    }
     // Speicherung OK, weiterleiten zur übersicht
     header ( "Location: ../?alert=add_ok&");
 }
