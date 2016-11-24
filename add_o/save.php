@@ -11,12 +11,12 @@ include ( $sys["root_path"] . "_global/header.php" );
 $obj_title    	= htmlspecialchars ( mysql_escape_string ( $_POST["obj_title"] ) );
 
 // Einzigartigkeit des Objekts prüfen
-$res_count 			= $db->fctCountData ( "bew_inventar_obj" , "`obj_title` = '" . $obj_title . "'");
+$obj_count 			= $db->fctCountData ( "bew_inventar_obj" , "`obj_title` = '" . $obj_title . "'");
 
 // Mindestens ein Obejekttitel muss ausgefüllt sein(doppelte Aufführung darf nicht sein)
 if ( !empty ( $obj_title ) )
 {
-	if ( $res_count == 0 )
+	if ( $obj_count == 0 )
 	{
 		// Objekttitel erstellen
 		$db->fctSendQuery ( "INSERT INTO `bew_inventar_obj` (`obj_title`) VALUES ('" . $obj_title . "')" );
