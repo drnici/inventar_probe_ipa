@@ -17,7 +17,7 @@ if ( isset ( $_GET["error"] ) )
 
 	if ( $_GET["error"] == "exi" )
 	{
-		echo ( "<p class=\"warning\"><b>Fehler</b>: Das Objekt mit diesem Titel existiert bereits.</p>\n" );
+		echo ( "<p class=\"warning\"><b>Fehler</b>: Ein Inventar mit dieser Nummmer un dem Objekt existiert bereits.</p>\n" );
 	}
 	if ( $_GET["error"] == "leer" )
 	{
