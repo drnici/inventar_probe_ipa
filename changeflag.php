@@ -12,12 +12,12 @@ $inventar_id 			= htmlspecialchars ( mysql_escape_string ( $_GET["inventar_id"] 
 $action	= htmlspecialchars ( mysql_escape_string ( $_GET["action"] ) );
 
 // Beide Werte m�ssen vorhanden sein
-if ( !empty ( $inventar_id ) AND is_numeric ( $inventar_id )  AND !empty($action))
+if ( !empty ( $inventar_id ) AND !empty($action))
 {
 	$inventar_data		= $db->fctSelectData ( "bew_inventar_res" , "`inventar_id` = " . $inventar_id );
 	if ( !empty ( $inventar_data["inventar_id"] ) )
 	{
-		$allowed_fields = array ( "visum_lde" , "freigabe" , "visum_bb","");
+		$allowed_fields = array ( "visum_lde" , "freigabe" , "visum_bb");
 		
 		if ( in_array ( $action , $allowed_fields ) ) {
             if ($action == "visum_lde") {

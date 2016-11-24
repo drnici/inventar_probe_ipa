@@ -21,6 +21,10 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 		}
 	}
 
+	if(isset($_GET["inventar"]) AND isset($_GET["demage"])){
+		$db->fctSendQuery("UPDATE `bew_inventar_res` SET `inventar_damage` = '".$_GET["demage"]."', `inventar_visum_bb` = 0,, `inventar_visum_lde` = 0, `inventar_release` = 0  WHERE `inventar_id` = '".$_GET["inventar"]."'");
+		header ( "Location: ./?alert=changeflag_ok&");
+	}
 	if ($sys["user"]["role_id"] == 1) {
 		// ANZEIGE FÜR LERNENDE
 		$sys["page_title"] = "Mein Inventar";
@@ -149,7 +153,6 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 
 
 		// Filterfelder ende
-	print_r($sys["user"]["person_id"]);
 		if ($sys["user"]["role_id"] == 5) {
 			// Administratoren sehen den ganzen Inventar, unabhängig davon ob diese bereits besprochen oder freigegeben wurden
 			$inventar_result = $db->fctSendQuery("SELECT bir.* , bio.* , cp.* FROM  `bew_inventar_res` AS bir INNER JOIN  `bew_inventar_obj` AS bio ON bir.obj_id = bio.obj_id INNER JOIN  `core_person` AS cp ON bir.person_id = cp.person_id WHERE " . $where_clause . " ORDER BY cp.person_vorname, cp.person_name, bir.inventar_nr ASC");
@@ -159,13 +162,11 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 		}
 		if (mysql_num_rows($inventar_result) == 0) {
 			echo("<p>Keine Inventar entspricht Ihren Filterkriterien.</p>\n");
-			print($inventar_result);
 		} else {
 			?>
 
 			<table>
 				<tr>
-					<th>&nbsp;</th>
 					<th>Lernende/r</th>
 					<th>Inventar</th>
 					<th>Nr.</th>
@@ -173,6 +174,7 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 					<th>Freigegeben</th>
 					<th>BB</th>
 					<th>Lde</th>
+					<th>Speichern</th>
 				</tr>
 
 				<?PHP
@@ -189,27 +191,36 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 							echo("<tr>\n");
 							$row_highlight = true;
 						}
-						echo("<td><img src=\"" . $sys["icon_path"] . "bew_quali.gif\" alt=\"Icon\" border=\"0\" /></td>\n");
 						echo("<td><a href=\"" . $sys["root_path"] . "/core/person/profile/?person_id=" . $inventar_data["person_id"] . "&\">" . $inventar_data["person_vorname"] . " " . $inventar_data["person_name"] . "</a></td>\n");
 						echo("<td>". $inventar_data["obj_title"] . "</td>\n");
 						echo("<td>". $inventar_data["inventar_nr"] . "</td>\n");
-						echo("<td>". $inventar_data["inventar_damage"] . "</td>\n");
+						echo("<td><textarea rows=\"2\" cols=\"10\" id=\"damage\">". $inventar_data["inventar_damage"] . "</textarea></td>\n");
 						if($sys["user"]["role_id"] == 5){
 
 							if($inventar_data["inventar_release"]== 0) {
 								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=freigabe&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
+								if($inventar_data["inventar_visum_bb"] == 0){
+									echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+								}else{
+									echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+								}
+								if($inventar_data["inventar_visum_lde"] == 0){
+									echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+								}else{
+									echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+								}
 							}else{
 								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=freigabe&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-							}
-							if($inventar_data["inventar_visum_bb"] == 0){
-								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-							}else{
-								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-							}
-							if($inventar_data["inventar_visum_lde"] == 0){
-								echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
-							}else{
-								echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+								if($inventar_data["inventar_visum_bb"] == 0){
+									echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
+								}else{
+									echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
+								}
+								if($inventar_data["inventar_visum_lde"] == 0){
+									echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+								}else{
+									echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+								}
 							}
 						}else{
 							if($inventar_data["inventar_release"]== 0) {
@@ -229,74 +240,7 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 							}
 
 						}
-
-						/*// Anzeige FREIGABE inkl. Change-Link
-						if ($quali_complete) {
-							if ($quali_data["res_release"]) $release_state = "ok";
-							else                                        $release_state = "nok";
-							echo("<td>\n");
-
-							if ($sys["user"]["role_id"] == 5) echo("<a href=\"changeflag.php?res_id=" . $quali_data["res_id"] . "&amp;value=res_release&amp;person_s_semester=" . $person_s_semester . "&amp;periode_id=" . $periode_id . "&amp;\"><img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" /></a>\n");
-							else echo("<img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" />\n");
-
-							echo("</td>\n");
-						} else echo("<td>&nbsp;</td>\n");
-
-						// Anzeige BESPROCHEN inkl. Change-Link
-						if ($quali_complete && $quali_data["res_release"]) {
-							if ($quali_data["res_discuss"]) $release_state = "ok";
-							else                                        $release_state = "nok";
-							echo("<td>\n");
-
-							if ($sys["user"]["role_id"] == 5) echo("<a href=\"changeflag.php?res_id=" . $quali_data["res_id"] . "&amp;value=res_discuss&amp;person_s_semester=" . $person_s_semester . "&amp;periode_id=" . $periode_id . "&amp;\"><img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" /></a>\n");
-							else echo("<img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" />\n");
-
-							echo("</td>\n");
-						} else echo("<td>&nbsp;</td>\n");
-
-						// Anzeige VISUM BERUFSBILDNER inkl. Change-Link
-						if ($quali_complete && $quali_data["res_release"] && $quali_data["res_discuss"]) {
-							if ($quali_data["res_visum_bb"]) $release_state = "ok";
-							else                                        $release_state = "nok";
-							echo("<td>\n");
-
-							if ($sys["user"]["role_id"] == 5) echo("<a href=\"changeflag.php?res_id=" . $quali_data["res_id"] . "&amp;value=res_visum_bb&amp;person_s_semester=" . $person_s_semester . "&amp;periode_id=" . $periode_id . "&amp;\"><img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" /></a>\n");
-							else echo("<img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" />\n");
-
-							echo("</td>\n");
-						} else echo("<td>&nbsp;</td>\n");
-
-						// Anzeige VISUM LERNENDE/R (kein Changelink, nur f�r Lernende)
-						if ($quali_complete && $quali_data["res_release"] && $quali_data["res_discuss"]) {
-							if ($quali_data["res_visum_lde"]) $release_state = "ok";
-							else                                        $release_state = "nok";
-
-							echo("<td><img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" /></td>\n");
-						} else echo("<td>&nbsp;</td>\n");
-
-						// Anzeige VISUM GESETZLICHE VERTRETUNG inkl. Change-Link
-						if ($quali_complete && $quali_data["res_release"] && $quali_data["res_discuss"]) {
-
-							if ($quali_data["res_visum_gv"]) $release_state = "ok";
-							else                                        $release_state = "nok";
-							echo("<td>\n");
-
-							if ($sys["user"]["role_id"] == 5) echo("<a href=\"changeflag.php?res_id=" . $quali_data["res_id"] . "&amp;value=res_visum_gv&amp;person_s_semester=" . $person_s_semester . "&amp;periode_id=" . $periode_id . "&amp;\"><img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" /></a>\n");
-							else echo("<img src=\"" . $sys["icon_path"] . "global_" . $release_state . ".gif\" alt=\"Icon\" border=\"0\" />\n");
-
-							echo("</td>\n");
-						} else echo("<td>&nbsp;</td>\n");
-
-						// Links Edit & Delete
-						if ($sys["user"]["role_id"] == 5) {
-							echo("<td nowrap=\"nowrap\">\n");
-							if (!$quali_data["res_release"]) {
-								echo("<a href=\"./edit/?res_id=" . $quali_data["res_id"] . "&amp;person_s_semester=" . $person_s_semester . "&amp;periode_id=" . $periode_id . "&amp;\"><img src=\"" . $sys["icon_path"] . "global_edit.gif\" alt=\"Qualifikation bearbeiten\" border=\"0\" /></a>\n");
-								echo("<a href=\"./del/?res_id=" . $quali_data["res_id"] . "&amp;person_s_semester=" . $person_s_semester . "&amp;periode_id=" . $periode_id . "&amp;\"><img src=\"" . $sys["icon_path"] . "global_del.gif\" alt=\"Qualifikation l�schen\" border=\"0\" /></a>\n");
-							}
-							echo("</td>\n");
-						}
-						*/
+						echo("<td><button value=\"".$inventar_data["inventar_id"]."\" onclick=\"fctSave(this.value,document.getElementById('damage').value);\"/>Speichern</button></td>");
 						echo("</tr>\n");
 					}
 				}
