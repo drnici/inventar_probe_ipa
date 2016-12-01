@@ -2,90 +2,100 @@
 ############################################################################################
 $sys["root_path"] 	= "../../../../";
 $sys["script"] 		= false;
-$sys["nav_id"]		= 77;
+$sys["nav_id"]		= 76;
 ############################################################################################
 include ( $sys["root_path"] . "_global/header.php" );
 ############################################################################################
-$sys["page_title"] 	= "Qualifikation l�schen";
+$sys["page_title"] 	= "Inventar l&oumlschen";
 ############################################################################################
 
-$res_id				= htmlspecialchars ( mysql_escape_string ( $_GET["res_id"] ) );
-$person_s_semester	= htmlspecialchars ( mysql_escape_string ( $_GET["person_s_semester"] ) );
-$periode_id			= htmlspecialchars ( mysql_escape_string ( $_GET["periode_id"] ) );
-$res_data 			= $db->fctSelectData ( "bew_quali_res" , "`res_id` = '" . $res_id . "'" );
-
-if ( isset ( $res_id ) AND !empty ( $res_data["res_id"] ) AND !$res_data["res_release"] )
-{
-	// Personendaten
-	$person_data = $db->fctSelectData ( "core_person" , "`person_id` = " . $res_data["person_id"] );
-	$firma_data  = $db->fctSelectData ( "core_firma" , "`firma_id` = " . $person_data["firma_id"] );
-	
-	// Zeitraum
-	$periode_data = $db->fctSelectData ( "bew_quali_periode" , "`periode_id` = " . $res_data["periode_id"] );
-?>
-
-	<p>
-    <a href="./"><img src="<?PHP echo ( $sys["icon_path"] ); ?>bew_quali.gif" alt="zur�ck zur �bersicht" border="0" /> zur�ck zur �bersicht</a><br />
-    </p>
-
-	<table>
-	<tr>
-	<th>Person</th>
-	<td><?PHP echo ( $person_data["person_vorname"] . " " . $person_data["person_name"] . ", " . $firma_data["firma_name"] ); ?></td>
-	</tr>
-	<tr>
-	<th>Zeitraum</th>
-	<td><?PHP echo ( $periode_data["periode_title"] . " (" . $periode_data["periode_start"] . " - " . $periode_data["periode_end"] . ")" ); ?></td>
-	</tr>
-    <tr>
-	<th>Zusammenfassung</th>
-    <td>
-	<?PHP
-	$antwort_result = $db->fctSendQuery ( "SELECT * FROM `bew_quali_antwort` ORDER BY `antwort_id` ASC" );
-	while ( $antwort_data = mysql_fetch_array ( $antwort_result ) )
-	{
-		$zf_count = $db->fctCountData ( "bew_quali_resantwort" , "`res_id` = " . $res_data["res_id"] . " AND `antwort_id` = " . $antwort_data["antwort_id"] );
-		
-		echo ( "<a title=\"" . $antwort_data["antwort_desc"] . "\">" . $antwort_data["antwort_text"] . "</a>: " . $zf_count . "<br />\n" );
+if (isset ($_GET["alert"])) {
+	if ($_GET["alert"] == "add_ok") {
+		echo("<p class=\"notification\"><b>Objekt erfolgreich hinzugef&uumlgt.</b></p>\n");
 	}
-	?>
-    </td>
-	</tr>
-    <tr>
-	<th>Gewichtung</th>
-    <td>
-    <?PHP
-	$total_antwort = mysql_fetch_array ( $db->fctSendQuery ( "SELECT SUM(`antwort_id`) FROM `bew_quali_resantwort` WHERE `res_id` = " . $res_data["res_id"] ) );
-	$frage_count = $db->fctCountData ( "bew_quali_resantwort" , "`res_id` = " . $res_data["res_id"] );
-	if ( $frage_count == 0 )
-	{
-		echo ( "-" );
+	if ($_GET["alert"] == "changeflag_ok") {
+		echo("<p class=\"notification\"><b>&Aumlnderung erfolgreich vorgenommen.</b></p>\n");
 	}
-	else echo ( bcdiv ( $total_antwort[0] , $frage_count , 2 ) );
-	?>
-    </td>
-    </tr>
-	</table>
-    
-    <p class="warning"><b>Achtung</b>: Wollen Sie diese Qualifikation wirklich unwiderruflich l�schen?</p>
-    
-    <form action="save.php" method="post" name="quali_del">
-    	<input type="hidden" name="res_id" value="<?PHP echo ( $res_data["res_id"] ); ?>" />
-    	<input type="hidden" name="person_s_semester" value="<?PHP echo ( $person_s_semester ); ?>" />
-    	<input type="hidden" name="periode_id" value="<?PHP echo ( $periode_id ); ?>" />
-    	<p>
-            <input type="submit" name="btn" value="Qualifikation l�schen" class="btn" />
-            <input type="button" name="btn" value="Abbrechen" class="btn" onclick="self.location.href='../?person_s_semester=<?PHP echo ( $person_s_semester ); ?>&amp;periode_id=<?PHP echo ( $periode_id ); ?>&amp;';" />
-        </p>
-    </form>
-    
-<?PHP
-}
-else
-{
-	header ( "Location: ../" );
+	if ($_GET["alert"] == "del_ok") {
+		echo("<p class=\"notification\"><b>Qualifikation erfolgreich gel&oumlscht.</b></p>\n");
+	}
 }
 
+if ($sys["user"]["role_id"] == 5) {
+	if(isset($_GET["inventar"])){
+		$db->fctSendQuery("DELETE FROM `bew_inventar_res` WHERE `inventar_id` = ".$_GET["inventar"]);
+		header ( "Location: ./?alert=changeflag_ok&");
+	}
+
+
+	// Nur Administratoren dürfen Inventar erstellen
+
+		echo("<p><a href=\"./add/\"><img src=\"" . $sys["icon_path"] . "global_add.gif\" alt=\"Inventar erstellen\" border=\"0\" />Inventar erstellen</a></p>\n");
+		$where_clause = "cp.person_deactivation = 0 AND cp.role_id = 1 AND cp.beruf_id = 1 OR cp.person_id = 365";
+
+		// Administratoren sehen den ganzen Inventar, unabhängig davon ob diese bereits freigegeben wurde oder nicht
+		$inventar_result = $db->fctSendQuery("SELECT bir.* , bio.* , cp.* FROM  `bew_inventar_res` AS bir INNER JOIN  `bew_inventar_obj` AS bio ON bir.obj_id = bio.obj_id INNER JOIN `core_person` AS cp ON bir.person_id = cp.person_id WHERE " . $where_clause . " ORDER BY cp.person_vorname, cp.person_name, bir.inventar_nr ASC");
+
+
+	if (mysql_num_rows($inventar_result) == 0) {
+		echo("<p>Keine Inventar entspricht Ihren Filterkriterien.</p>\n");
+	} else {
+		?>
+
+		<table>
+			<tr>
+				<th>Lernende/r</th>
+				<th>Inventar</th>
+				<th>Nr.</th>
+				<th>Sch&aumlden</th>
+				<th>L&oumlschen</th>
+			</tr>
+
+			<?PHP
+			$row_highlight = true;
+
+			while ($inventar_data= mysql_fetch_array($inventar_result)) {
+				// Pr�fen ob der Benutzer �berhaupt zugreifen darf
+				$access = fctCheckAccess($sys["user"], $inventar_data["person_id"], $db);
+				if ($access) {
+					if ($row_highlight) {
+						echo("<tr class=\"row_highlight\">\n");
+						$row_highlight = false;
+					} else {
+						echo("<tr>\n");
+						$row_highlight = true;
+					}if($inventar_data["person_id"] == 365){
+						echo('<td><select name="person_id" size="1"><option value="">..</option>');
+						$person_result = $db->fctSendQuery ( "SELECT cp.person_id, cp.person_vorname, cp.person_name FROM `core_person` AS cp WHERE cp.role_id = 1 AND ( cp.person_s_semester = 1 OR cp.person_s_semester = 2 ) AND `beruf_id` = 1 AND cp.person_deactivation = 0 ORDER BY cp.person_vorname ASC, cp.person_name ASC" );
+
+						while ( $person_data = mysql_fetch_array ( $person_result ) )
+						{
+							echo ( "<option value=\"" . $person_data["person_id"] . "\"" . $s . ">" . $person_data["person_vorname"] . " " . $person_data["person_name"] . "</option>\n" );
+						}
+						echo('<select></td>');
+
+					}else {
+						echo("<td><a href=\"" . $sys["root_path"] . "/core/person/profile/?person_id=" . $inventar_data["person_id"] . "&\">" . $inventar_data["person_vorname"] . " " . $inventar_data["person_name"] . "</a></td>\n");
+					}
+					echo("<td>". $inventar_data["obj_title"] . "</td>\n");
+					echo("<td>". $inventar_data["inventar_nr"] . "</td>\n");
+					if(strlen($inventar_data["inventar_damage"])<40){
+						echo("<td><textarea rows=\"3\" cols=\"10\" id=\"damage".$inventar_data["inventar_id"]."\" style=\"height: 20px;\">". $inventar_data["inventar_damage"] . "</textarea></td>\n");
+					}else{
+						echo("<td><textarea rows=\"3\" cols=\"10\" id=\"damage".$inventar_data["inventar_id"]."\" style=\"height: ".strlen($inventar_data["inventar_damage"])/1.9 ."px;\">". $inventar_data["inventar_damage"] . "</textarea></td>\n");
+					}
+
+					echo("<td><button value=\"".$inventar_data["inventar_id"]."\" onclick=\"fctDel(this.value,document.getElementById('damage".$inventar_data["inventar_id"]."').value);\"/>L&oumlschen</button></td>");
+					echo("</tr>\n");
+				}
+			}
+			?>
+
+		</table>
+
+		<?PHP
+	}
+}
 ############################################################################################
 include ( $sys["root_path"] . "_global/footer.php" );
 ############################################################################################
