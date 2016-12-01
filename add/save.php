@@ -10,15 +10,12 @@ include ( $sys["root_path"] . "_global/header.php" );
 // Eingaben validieren
 $obj_id   	= htmlspecialchars ( mysql_escape_string ( $_POST["obj_id"] ) );
 $inventar_nr    = htmlspecialchars ( mysql_escape_string ( $_POST["inventar_nr"] ) );
-$person_id = '';
+$person_id =  NULL;
 $ersteller = $sys["user"]["person_id"];
 if(isset($_POST["person_id"])) $person_id = htmlspecialchars ( mysql_escape_string ( $_POST["person_id"] ) );
 
 // Einzigartigkeit des Inventars prüfen
 $obj_count 			= $db->fctCountData ( "bew_inventar_res" , "`obj_id` = " . $obj_id . ";`inventar_nr` = " . $inventar_nr ."");
-$handle = fopen ("text.txt", w);
-fwrite ($handle, $obj_count);
-fclose ($handle);
 header ( "Location: ../?alert=add_ok&");
 
 // Mindestens ein Obejekttitel muss ausgefüllt sein(doppelte Aufführung darf nicht sein)
@@ -26,10 +23,15 @@ if ( !empty ( $obj_id ) OR !empty ( $inventar_nr ) )
 {
     if($obj_count == 0){
         // Inventar erstellen
-        $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_damage`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $person_id . "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,'',0,0)" );
-        $inhalt = "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_damage`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $person_id . "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,'',0,0)" ;
+        if(!empty($person_id) && $person_id != ""){
+            $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $person_id. "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)" );
+            $inhalt = "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $person_id. "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)";
 
-        header ( "Location: ../?alert=add_ok&");
+        }else{
+            $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)" );
+            $inhalt = "INSERT INTO `bew_inventar_res` (`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)";
+        }
+        header ( "Location: ../?alert=add_ok&inhalt=".$inhalt."&");
     }else{
         // das Inventar existiert schon
         header ( "Location: ./?error=exi&inventar_nr=" . $inventar_nr . "&obj_id=".$obj_id  ."&person_id=".$person_id."&" );
