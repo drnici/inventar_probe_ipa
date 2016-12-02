@@ -21,10 +21,11 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 		}
 	}
 
-	if(isset($_GET["inventar"]) AND isset($_GET["demage"])){
-		$db->fctSendQuery("UPDATE `bew_inventar_res` SET `inventar_damage` = '".$_GET["demage"]."', `inventar_visum_bb` = 0, `inventar_visum_lde` = 0, `inventar_release` = 0  WHERE `inventar_id` = '".$_GET["inventar"]."'");
+	if(isset($_GET["inventar"]) AND isset($_GET["demage"]) AND isset($_GET["person"])){
+		$db->fctSendQuery("UPDATE `bew_inventar_res` SET `inventar_damage` = '".$_GET["demage"]."', `person_id` = ".$_GET["person"].", `inventar_visum_bb` = 0, `inventar_visum_lde` = 0, `inventar_release` = 0  WHERE `inventar_id` = '".$_GET["inventar"]."'");
 		header ( "Location: ./?alert=changeflag_ok&");
 	}
+
 	if ($sys["user"]["role_id"] == 1) {
 		// ANZEIGE FÜR LERNENDE
 		$sys["page_title"] = "Mein Inventar";
@@ -48,12 +49,9 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 
 				<?PHP
 				$row_highlight = true;
-
 				while ($inventar_data= mysql_fetch_array($inventar_result)) {
 					// Prüfen ob es freigegeben wurde
-					if($inventar_data["inventar_release"]== 0){
-						echo("<p>Zur Zeit ist noch kein Inventar freigegeben.</p>\n");
-					}else {
+					if($inventar_data["inventar_release"]!= 0){
 						// Pr�fen ob der Benutzer �berhaupt zugreifen darf
 						$access = fctCheckAccess($sys["user"], $inventar_data["person_id"], $db);
 						if ($access) {
@@ -66,10 +64,10 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 							}
 							echo("<td>" . $inventar_data["obj_title"] . "</td>\n");
 							echo("<td>" . $inventar_data["inventar_nr"] . "</td>\n");
-							if (strlen($inventar_data["inventar_damage"]) < 40) {
-								echo("<td><textarea rows=\"3\" cols=\"10\" id=\"damage" . $inventar_data["inventar_id"] . "\" style=\"height: 20px;\">" . $inventar_data["inventar_damage"] . "</textarea></td>\n");
+							if (strlen($inventar_data["inventar_damage"]) < 22) {
+								echo("<td><textarea rows=\"3\" cols=\"10\" class='damage' id=\"damage" . $inventar_data["inventar_id"] . "\" style=\"height: 20px;\">" . $inventar_data["inventar_damage"] . "</textarea></td>\n");
 							} else {
-								echo("<td><textarea rows=\"3\" cols=\"10\" id=\"damage" . $inventar_data["inventar_id"] . "\" style=\"height: " . strlen($inventar_data["inventar_damage"]) / 1.9 . "px\">" . $inventar_data["inventar_damage"] . "</textarea></td>\n");
+								echo("<td><textarea rows=\"3\" cols=\"10\" class='damage' id=\"damage" . $inventar_data["inventar_id"] . "\" style=\"height: " . strlen($inventar_data["inventar_damage"]) . "px\">" . $inventar_data["inventar_damage"] . "</textarea></td>\n");
 							}
 							echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\" /></td>\n");
 							if ($inventar_data["inventar_visum_bb"] == 0) {
@@ -94,11 +92,11 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 			</table>
 			<?php
 		}
-	} else {
-		// Nur Administratoren dürfen Inventar erstellen
-		if ($sys["user"]["role_id"] == 5) {
-			echo("<p><a href=\"./add/\"><img src=\"" . $sys["icon_path"] . "global_add.gif\" alt=\"Inventar erstellen\" border=\"0\" />Inventar erstellen</a></p>\n");
-		}
+	} else if($sys["user"]["role_id"] == 5){
+
+		//Inventar erstellen
+		echo("<p><a href=\"./add/\"><img src=\"" . $sys["icon_path"] . "global_add.gif\" alt=\"Inventar erstellen\" border=\"0\" />Inventar erstellen</a></p>\n");
+
 
 		// Filterfelder vorbereiten
 		if (isset ($_GET["person_s_semester"]) AND (is_numeric($_GET["person_s_semester"]) OR $_GET["person_s_semester"] == 0)) $person_s_semester = htmlspecialchars(mysql_escape_string($_GET["person_s_semester"]));
@@ -106,7 +104,7 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
         if (isset ($_GET["inventar_nr"]) AND (is_numeric($_GET["inventar_nr"]) OR $_GET["inventar_nr"] == "")) $inventar_nr = htmlspecialchars(mysql_escape_string($_GET["inventar_nr"]));
 
 		
-		$where_clause = "cp.person_deactivation = 0 AND cp.role_id = 1 AND cp.beruf_id = 1 OR cp.person_id = 365";
+		$where_clause = "cp.person_deactivation = 0 OR cp.person_deactivation is null AND cp.role_id = 1 OR cp.role_id is null AND cp.beruf_id = 1 OR cp.beruf_id is null";
 		$semester_result = $db->fctSendQuery("SELECT cp.person_s_semester FROM `core_person` AS cp WHERE " . $where_clause . " GROUP BY cp.person_s_semester");
         $inventar_name_result = $db->fctSendQuery("SELECT bio.* FROM `bew_inventar_obj` AS bio");
 		$inventar_nr_result = $db->fctSendQuery("SELECT bir.inventar_nr FROM `bew_inventar_res` AS bir GROUP BY bir.inventar_nr ORDER BY bir.inventar_nr ASC");
@@ -165,17 +163,8 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 		}
 		echo("</select>\n");
 
-
-		// Filterfelder ende
-		if ($sys["user"]["role_id"] == 5) {
-			// Administratoren sehen den ganzen Inventar, unabhängig davon ob diese bereits besprochen oder freigegeben wurden
-
-			$inventar_result = $db->fctSendQuery("SELECT bir.* , bio.* , cp.* FROM  `bew_inventar_res` AS bir INNER JOIN  `bew_inventar_obj` AS bio ON bir.obj_id = bio.obj_id INNER JOIN `core_person` AS cp ON bir.person_id = cp.person_id WHERE " . $where_clause . " ORDER BY cp.person_vorname, cp.person_name, bir.inventar_nr ASC");
-		} else {
-			// andere Benutzer sehen nur freigegebene und besprochene Qualis
-			$inventar_result = $db->fctSendQuery("SELECT bir.* , bio.* , cp.* FROM  `bew_inventar_res` AS bir INNER JOIN  `bew_inventar_obj` AS bio ON bir.obj_id = bio.obj_id INNER JOIN  `core_person` AS cp ON bir.person_id = cp.person_id WHERE " . $where_clause . " AND bir.person_id = ".$sys["user"]["person_id"]." ORDER BY cp.person_vorname, cp.person_name, bir.inventar_nr ASC");
-		}
-
+		//Query für die Filterungsabfrage
+		$inventar_result = $db->fctSendQuery("SELECT bir.* , bio.* , cp.* FROM  `bew_inventar_res` AS bir INNER JOIN  `bew_inventar_obj` AS bio ON bir.obj_id = bio.obj_id LEFT JOIN `core_person` AS cp ON bir.person_id = cp.person_id WHERE " . $where_clause . " ORDER BY cp.person_vorname, cp.person_name, bir.inventar_nr ASC");
 
 		if (mysql_num_rows($inventar_result) == 0) {
 			echo("<p>Keine Inventar entspricht Ihren Filterkriterien.</p>\n");
@@ -188,93 +177,76 @@ $sys["page_title"] 	= "Haftungsmodul Inventar";
 					<th>Inventar</th>
 					<th>Nr.</th>
 					<th>Sch&aumlden</th>
-					<th>Freigeben</th>
+					<th>Freig.</th>
 					<th>BB</th>
 					<th>Lde</th>
-					<th>Speichern</th>
+					<th></th>
 				</tr>
 
 				<?PHP
 				$row_highlight = true;
 
 				while ($inventar_data= mysql_fetch_array($inventar_result)) {
-					// Pr�fen ob der Benutzer �berhaupt zugreifen darf
-					$access = fctCheckAccess($sys["user"], $inventar_data["person_id"], $db);
-					if ($access) {
 						if ($row_highlight) {
 							echo("<tr class=\"row_highlight\">\n");
 							$row_highlight = false;
 						} else {
 							echo("<tr>\n");
 							$row_highlight = true;
-						}if($inventar_data["person_id"] == 365){
-							echo('<td class="person_inventar"><select name="person_id" size="1"><option value="">..</option>');
+						}
+						//if($inventar_data["person_id"] == 0){
+							echo('<td class="person_inventar"><select name="person_id" id="person_id'. $inventar_data["inventar_id"].'" size="1"><option value="0">..</option>');
 							$person_result = $db->fctSendQuery ( "SELECT cp.person_id, cp.person_vorname, cp.person_name FROM `core_person` AS cp WHERE cp.role_id = 1 AND ( cp.person_s_semester = 1 OR cp.person_s_semester = 2 ) AND `beruf_id` = 1 AND cp.person_deactivation = 0 ORDER BY cp.person_vorname ASC, cp.person_name ASC" );
 
 							while ( $person_data = mysql_fetch_array ( $person_result ) )
 							{
-								echo ( "<option value=\"" . $person_data["person_id"] . "\"" . $s . ">" . $person_data["person_vorname"] . " " . $person_data["person_name"] . "</option>\n" );
+								if($person_data["person_id"] == $inventar_data["person_id"]){
+									echo ( "<option value=\"" . $person_data["person_id"] . "\" selected>" . $person_data["person_vorname"] . " " . $person_data["person_name"] . "</option>\n" );
+								}else {
+									echo("<option value=\"" . $person_data["person_id"] . "\">" . $person_data["person_vorname"] . " " . $person_data["person_name"] . "</option>\n");
+								}
 							}
 							echo('<select></td>');
 
-						}else {
-							echo("<td class=\"person_inventar\"><a href=\"" . $sys["root_path"] . "/core/person/profile/?person_id=" . $inventar_data["person_id"] . "&\">" . $inventar_data["person_vorname"] . " " . $inventar_data["person_name"] . "</a></td>\n");
-						}
+						//}else {
+						//	echo("<td class=\"person_inventar\"><a href=\"" . $sys["root_path"] . "/core/person/profile/?person_id=" . $inventar_data["person_id"] . "&\">" . $inventar_data["person_vorname"] . " " . $inventar_data["person_name"] . "</a></td>\n");
+						//}
 						echo("<td>". $inventar_data["obj_title"] . "</td>\n");
 						echo("<td>". $inventar_data["inventar_nr"] . "</td>\n");
-						if(strlen($inventar_data["inventar_damage"])<40){
-							echo("<td><textarea rows=\"3\" cols=\"10\" id=\"damage".$inventar_data["inventar_id"]."\" style=\"height: 20px;\">". $inventar_data["inventar_damage"] . "</textarea></td>\n");
+						if(strlen($inventar_data["inventar_damage"])<22){
+							echo("<td><textarea rows=\"3\" cols=\"10\"class='damage' id=\"damage".$inventar_data["inventar_id"]."\" style=\"height: 20px;\">". $inventar_data["inventar_damage"] . "</textarea></td>\n");
 						}else{
-							echo("<td><textarea rows=\"3\" cols=\"10\" id=\"damage".$inventar_data["inventar_id"]."\" style=\"height: ".strlen($inventar_data["inventar_damage"])/1.9 ."px;\">". $inventar_data["inventar_damage"] . "</textarea></td>\n");
+							echo("<td><textarea rows=\"3\" cols=\"10\" class='damage' id=\"damage".$inventar_data["inventar_id"]."\" style=\"height: ".strlen($inventar_data["inventar_damage"])."px;\">". $inventar_data["inventar_damage"] . "</textarea></td>\n");
 						}
-						if($sys["user"]["role_id"] == 5){
 
-							if($inventar_data["inventar_release"]== 0) {
+
+						if($inventar_data["inventar_release"]== 0) {
+							if($inventar_data["person_id"] == 0){
+								echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+							}else{
 								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=freigabe&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-								if($inventar_data["inventar_visum_bb"] == 0){
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
-								}else{
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
-								}
-								if($inventar_data["inventar_visum_lde"] == 0){
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
-								}else{
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
-								}
+							}
+							if($inventar_data["inventar_visum_bb"] == 0){
+								echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
 							}else{
-								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=freigabe&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-								if($inventar_data["inventar_visum_bb"] == 0){
-									echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-								}else{
-									echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-								}
-								if($inventar_data["inventar_visum_lde"] == 0){
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
-								}else{
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
-								}
+								echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
 							}
 						}else{
-							if($inventar_data["inventar_release"]== 0) {
-								echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\" /></td>\n");
+							echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=freigabe&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
+							if($inventar_data["inventar_visum_bb"] == 0){
+								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
 							}else{
-								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=freigabe&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-								if($inventar_data["inventar_visum_bb"] == 0){
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\" /></td>\n");
-								}else{
-									echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\" /></td>\n");
-								}
-								if($inventar_data["inventar_visum_lde"] == 0){
-									echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_lde&amp;\"><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-								}else{
-									echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_lde&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
-								}
+								echo("<td><a href=\"changeflag.php?inventar_id=" . $inventar_data["inventar_id"] . "&amp;action=visum_bb&amp;\"><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></a></td>\n");
 							}
-
 						}
-						echo("<td><button value=\"".$inventar_data["inventar_id"]."\" onclick=\"fctSave(this.value,document.getElementById('damage".$inventar_data["inventar_id"]."').value);\"/>Speichern</button></td>");
+
+						if($inventar_data["inventar_visum_lde"] == 0){
+							echo("<td><img src=\"" . $sys["icon_path"] . "global_nok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+						}else{
+							echo("<td><img src=\"" . $sys["icon_path"] . "global_ok.gif\" alt=\"Icon\" border=\"0\"></td>\n");
+						}
+						echo("<td><button value=\"".$inventar_data["inventar_id"]."\" onclick=\"fctSave(this.value,document.getElementById('damage".$inventar_data["inventar_id"]."').value,document.getElementById('person_id".$inventar_data["inventar_id"]."').value);\"/>Speichern</button></td>");
 						echo("</tr>\n");
-					}
 				}
 				?>
 

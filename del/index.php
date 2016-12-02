@@ -31,10 +31,10 @@ if ($sys["user"]["role_id"] == 5) {
 	// Nur Administratoren dürfen Inventar erstellen
 
 		echo("<p><a href=\"./add/\"><img src=\"" . $sys["icon_path"] . "global_add.gif\" alt=\"Inventar erstellen\" border=\"0\" />Inventar erstellen</a></p>\n");
-		$where_clause = "cp.person_deactivation = 0 AND cp.role_id = 1 AND cp.beruf_id = 1 OR cp.person_id = 365";
+		$where_clause = "cp.person_deactivation = 0 OR cp.person_deactivation is null AND cp.role_id = 1 OR cp.role_id is null AND cp.beruf_id = 1 OR cp.beruf_id is null";
 
 		// Administratoren sehen den ganzen Inventar, unabhängig davon ob diese bereits freigegeben wurde oder nicht
-		$inventar_result = $db->fctSendQuery("SELECT bir.* , bio.* , cp.* FROM  `bew_inventar_res` AS bir INNER JOIN  `bew_inventar_obj` AS bio ON bir.obj_id = bio.obj_id INNER JOIN `core_person` AS cp ON bir.person_id = cp.person_id WHERE " . $where_clause . " ORDER BY cp.person_vorname, cp.person_name, bir.inventar_nr ASC");
+		$inventar_result = $db->fctSendQuery("SELECT bir.* , bio.* , cp.* FROM  `bew_inventar_res` AS bir INNER JOIN  `bew_inventar_obj` AS bio ON bir.obj_id = bio.obj_id LEFT JOIN `core_person` AS cp ON bir.person_id = cp.person_id WHERE " . $where_clause . " ORDER BY cp.person_vorname, cp.person_name, bir.inventar_nr ASC");
 
 
 	if (mysql_num_rows($inventar_result) == 0) {
@@ -56,15 +56,14 @@ if ($sys["user"]["role_id"] == 5) {
 
 			while ($inventar_data= mysql_fetch_array($inventar_result)) {
 				// Pr�fen ob der Benutzer �berhaupt zugreifen darf
-				$access = fctCheckAccess($sys["user"], $inventar_data["person_id"], $db);
-				if ($access) {
+
 					if ($row_highlight) {
 						echo("<tr class=\"row_highlight\">\n");
 						$row_highlight = false;
 					} else {
 						echo("<tr>\n");
 						$row_highlight = true;
-					}if($inventar_data["person_id"] == 365){
+					}if($inventar_data["person_id"] == 0){
 						echo('<td><select name="person_id" size="1"><option value="">..</option>');
 						$person_result = $db->fctSendQuery ( "SELECT cp.person_id, cp.person_vorname, cp.person_name FROM `core_person` AS cp WHERE cp.role_id = 1 AND ( cp.person_s_semester = 1 OR cp.person_s_semester = 2 ) AND `beruf_id` = 1 AND cp.person_deactivation = 0 ORDER BY cp.person_vorname ASC, cp.person_name ASC" );
 
@@ -87,7 +86,7 @@ if ($sys["user"]["role_id"] == 5) {
 
 					echo("<td><button value=\"".$inventar_data["inventar_id"]."\" onclick=\"fctDel(this.value,document.getElementById('damage".$inventar_data["inventar_id"]."').value);\"/>L&oumlschen</button></td>");
 					echo("</tr>\n");
-				}
+
 			}
 			?>
 

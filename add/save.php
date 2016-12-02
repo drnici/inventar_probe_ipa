@@ -24,12 +24,12 @@ if ( !empty ( $obj_id ) OR !empty ( $inventar_nr ) )
     if($obj_count == 0){
         // Inventar erstellen
         if(!empty($person_id) && $person_id != ""){
-            $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $person_id. "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)" );
-            $inhalt = "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $person_id. "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)";
+            $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`,`inventar_time`) VALUES (" . $person_id. "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0,CURRENT_TIMESTAMP)" );
+            $inhalt = "INSERT INTO `bew_inventar_res` (`person_id`,`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`,`inventar_time`) VALUES (" . $person_id. "," . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0,CURRENT_TIMESTAMP)";
 
         }else{
-            $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)" );
-            $inhalt = "INSERT INTO `bew_inventar_res` (`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`) VALUES (" . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0)";
+            $db->fctSendQuery ( "INSERT INTO `bew_inventar_res` (`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`,`inventar_time`) VALUES (" . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0,CURRENT_TIMESTAMP)" );
+            $inhalt = "INSERT INTO `bew_inventar_res` (`obj_id`,`erfasser_id`,`inventar_nr`,`inventar_release`,`inventar_visum_lde`,`inventar_visum_bb`,`inventar_time`) VALUES (" . $obj_id . "," . $ersteller . ",'" . $inventar_nr . "',0,0,0,CURRENT_TIMESTAMP)";
         }
         header ( "Location: ../?alert=add_ok&inhalt=".$inhalt."&");
     }else{
