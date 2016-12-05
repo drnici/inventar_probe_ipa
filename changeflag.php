@@ -25,7 +25,7 @@ if ( !empty ( $inventar_id ) AND !empty($action))
                 else $target_value = 0;
                 $db->fctSendQuery("UPDATE `bew_inventar_res` SET `inventar_visum_lde` = " . $target_value . " WHERE `inventar_id` =" . $inventar_id);
             }
-
+            // wenn das Inventar freigegeben wurde
             if ($action == "freigabe") {
                 if ($inventar_data["inventar_release"] == 0) {
                     $db->fctSendQuery("UPDATE `bew_inventar_res` SET `inventar_release` = 1 WHERE `inventar_id` =" . $inventar_id);
@@ -33,7 +33,7 @@ if ( !empty ( $inventar_id ) AND !empty($action))
                     $db->fctSendQuery("UPDATE `bew_inventar_res` SET `inventar_release` = 0, `inventar_visum_lde` = 0, `inventar_visum_bb` = 0 WHERE `inventar_id` =" . $inventar_id);
                 }
             }
-
+            // wenn das Inventar vom BB freigegeben wurde
             if ($action == "visum_bb") {
                 if ($inventar_data["inventar_visum_bb"] == 0) $target_value = 1;
                 else $target_value = 0;
@@ -56,7 +56,6 @@ else
 	// nicht alle n�tigen Werte
 	header ( "Location: ./" );
 }
-
 ############################################################################################
 include ( $sys["root_path"] . "_global/footer.php" );
 ############################################################################################
